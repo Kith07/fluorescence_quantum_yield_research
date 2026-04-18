@@ -23,6 +23,8 @@ representation of the input which could be fed into 4 of our chosen downstream r
 
 We are currently in the benchmarking and evaluation phase of the project, comparing multiple model approaches and baselines. Our focus at this stage is to validate performance across methods and ensure that all reported results are accurate, reproducible, and robust before inclusion in the final paper/publication. 
 
+<img width="598" height="213" alt="image" src="https://github.com/user-attachments/assets/87c1f662-42a2-4fa4-ab75-3f24a6524ce0" />
+
 ## Citations
 
 [COATI: multi-modal contrastive pre-training for representing and traversing chemical space](https://doi.org/10.26434/chemrxiv-2023-bdkgm).
