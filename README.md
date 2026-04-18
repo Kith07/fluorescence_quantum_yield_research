@@ -1,136 +1,28 @@
-# COATI: multi-modal contrastive pre-training for representing and traversing chemical space
+# Advancing AI Research for Predicting Fluorescence Quantum Yields
 
-![](toc_graphic.png)
+## Overview
 
-# Overview
+This proposal aims to advance artificial intelligence (AI) research by developing cutting-edge deep learning methods to predict fluorescence quantum yields (FQY) of molecules. FQY prediction is pivotal for designing efficient molecular probes and diagnostic tools in biomedical sciences. Accurate prediction of these yields will revolutionize medical imaging and diagnostic applications by enabling the design of more effective and reliable fluorescent molecules. 
 
-COATI (Contrastive Optimization for Accelerated Therapeutic Inference) is a pre-trained, multi-modal encoder-decoder model of druglike chemical space. COATI is constructed without any human biasing of features, using contrastive learning from text and 3D representations of molecules to allow downstream use with structural models. COATI possesses many of the desired properties of a universal molecular embedding: fixed-dimension, invertibility, autoencoding, accurate regression, and low computation cost. 
+Current machine learning and deep learning methods face significant limitations due to insufficient training data and inconsistent prediction accuracy. To overcome these challenges, this project will compile comprehensive datasets, integrate domain-specific knowledge, and leverage pretrained models with transfer learning techniques. These advancements will enable robust prediction of FQY for novel molecules. The project will culminate in the creation of a
+publicly available dataset, high-performance predictive models, publications, and presentations. This initiative aligns seamlessly with NJIT’s mission to drive innovation in AI while promoting student development and engagement.
 
-COATI can also be used in a metadynamics algorithm for generative optimization for designing molecules that satisfy the multi-parameter optimization task of potency, solubility, and druglikeness.
+<img width="1028" height="365" alt="image" src="https://github.com/user-attachments/assets/4872f74b-ce71-4b0f-9801-1ddb1331f08b" />
 
-# Installation
+# Current Approach/Progress
 
-Before installation, we recommend to first setup a Python virtual environment.
+To predict the fluorescent quantum yield (FQY) from a given pair of molecule and solvent, we devised a model pipeline that first embedded both inputs into vectors, which were subsequently fed to downstream models for regression. To process the molecule and solvents, we first obtained the SMILES strings for each molecule and solvent, following which we fed both into the COATI model’s encoder to compute vector embeddings. COATI (Contrastive Optimization for Accelerated Therapeutic Inference) is a pre-trained, multimodal encoder-decoder model of druglike chemical space, which was primarily created to help with novel drug discovery. We adapt the models’ Grande encoder to fit our purposes by supplying SMILES strings to it and obtaining the vector embeddings for all 16k molecules and solvents.
 
-```bash
-$ git clone https://github.com/terraytherapeutics/COATI.git
-$ cd COATI
-$ pip install .
-```
+Once the embeddings are computed, we also incorporated other input features alongside them as supplementary information, specifically, 310 RDKit-derived molecular properties, also obtained through the same SMILE strings, as well as the Morgan Fingerprints for each molecule. Results for varying input sizes and whether supplementary information is also attached are shown in Table I. Once all input features are calculated, we concatenate them to form a single vector
+representation of the input which could be fed into 4 of our chosen downstream regression models:
 
-# Update 03-08-24: COATI2
+1) MLP Regressor
+2) XGBoost
+3) LightGBM
+4) Extra Trees Regressor
 
-We have released a COATI2 with updated weights. COATI2 was trained with ~2x more data, a chiral-aware 3D encoder, and a new vocabularity that also allows controlled generation of several properties. The embedding dimension has also been bumped up to 512 (previously 256). 
+We are currently in the benchmarking and evaluation phase of the project, comparing multiple model approaches and baselines. Our focus at this stage is to validate performance across methods and ensure that all reported results are accurate, reproducible, and robust before inclusion in the final paper/publication. 
 
-For a basic usage example see: `examples/tutorial_simple_gen.ipynb` and `examples/coati2/tutorial.ipynb`.
+## Citations
 
-
-The training scripts and 3D encoder are not available for COATI2. 
-
-
-# Examples
-
-- Basic molecule generation: `examples/simple_mol_generation/generation_examples.ipynb`.
-- [DUE model](https://arxiv.org/abs/2102.11409) regression: `examples/simple_mol_generation/due_model_regression.ipynb`.
-- Molecule generation analysis with Chembl dataset: `examples/simple_mol_generation/chembl_analysis.ipynb`.
-- Metadynamics approach to molecular design: `examples/metadynamics/metadynamics.ipynb`.
-
-# Model Training
-Training is setup for `torch.nn.parallel.DistributedDataParallel` on a multi-gpu machine. 
-
-- Example training script: `examples/training/train_grande.py`. Some notable arguments:
-```
-  # resume from checkpoint file
-    # args.resume_document = ''
-
-    args.ngrad_to_save = 2e6
-
-    # output logs
-    args.output_dir = "./logs/"
-    # where to save model checkpoints
-    args.model_dir = "./model_ckpts/"
-    # where to save dataset cache
-    args.data_dir = "./"
-```
-If not found in `args.data_dir` the routine will ask for confirmation before trying to download the training dataset from `s3://terray-public/datasets/coati_data/`.
-
-# Models in the paper
-
-The various models in the paper can be initialied using, e.g.,
-```
-from coati.models.io import load_e3gnn_smiles_clip_e2e
-
-encoder, tokenizer = load_e3gnn_smiles_clip_e2e(
-    freeze=True,
-    device=torch.device("cuda:0"),
-    # model parameters to load.
-    doc_url=<model path>,
-)
-```
-where we provide the following models (`doc_url`) with labels corresponding to their description in the paper:
-(recommended grande_closed)
-```
-s3://terray-public/models/tall_closed.pkl
-s3://terray-public/models/grande_closed.pkl
-s3://terray-public/models/grade_closed_fp.pkl
-s3://terray-public/models/barlow_closed_fp.pkl
-s3://terray-public/models/barlow_closed.pkl
-s3://terray-public/models/autoreg_only.pkl
-s3://terray-public/models/barlow_venti.pkl
-s3://terray-public/models/grande_open.pkl
-s3://terray-public/models/selfies_barlow.pkl
-```
-
-# Datasets
-
-Processed versions of public ADMET datasets with embeddings are made available:
-```
-s3://terray-public/datasets/ames.pkl
-s3://terray-public/datasets/bace_classification.pkl
-s3://terray-public/datasets/bace_regression.pkl
-s3://terray-public/datasets/bioavailability_ma.pkl
-s3://terray-public/datasets/caco2_wang.pkl
-s3://terray-public/datasets/chembl_canonical_smiles.pkl
-s3://terray-public/datasets/clearance_hepatocyte_az.pkl
-s3://terray-public/datasets/clearance_microsome_az.pkl
-s3://terray-public/datasets/clintox.pkl
-s3://terray-public/datasets/cyp1a2_veith.pkl
-s3://terray-public/datasets/cyp2c19_veith.pkl
-s3://terray-public/datasets/cyp2c9_veith.pkl
-s3://terray-public/datasets/cyp2d6_veith.pkl
-s3://terray-public/datasets/cyp3a4_veith.pkl
-s3://terray-public/datasets/delaney.pkl
-s3://terray-public/datasets/dili.pkl
-s3://terray-public/datasets/half_life_obach.pkl
-s3://terray-public/datasets/herg.pkl
-s3://terray-public/datasets/herg_inhib.pkl
-s3://terray-public/datasets/herg_karim.pkl
-s3://terray-public/datasets/hia_hou.pkl
-s3://terray-public/datasets/hiv.pkl
-s3://terray-public/datasets/ld50_zhu.pkl
-s3://terray-public/datasets/lipophilicity_astrazeneca.pkl
-s3://terray-public/datasets/pampa_ncats.pkl
-s3://terray-public/datasets/pgp_broccatelli.pkl
-s3://terray-public/datasets/ppbr_az.pkl
-s3://terray-public/datasets/solubility_aqsoldb.pkl
-s3://terray-public/datasets/tox21.pkl
-s3://terray-public/datasets/vdss_lombardo.pkl
-```
-
-These can be retrieved e.g. via
-```python
-import pickle
-from coati.common.s3 import download_from_s3
-
-download_from_s3("s3://terray-public/datasets/delaney.pkl")
-
-# datasets are available as pickle files (list of dictionaries)
-with open("./datasets/delaney.pkl", "rb") as f:
-    delaney = pickle.load(f)
-
-delaney[0].keys()
-```
-
-# Cite
-
-If you use COATI in your research, please cite our paper: [COATI: multi-modal contrastive pre-training for representing and traversing chemical space](https://doi.org/10.26434/chemrxiv-2023-bdkgm).
+[COATI: multi-modal contrastive pre-training for representing and traversing chemical space](https://doi.org/10.26434/chemrxiv-2023-bdkgm).
